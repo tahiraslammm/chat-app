@@ -34,6 +34,7 @@ const readChatHistory = () => {
         console.error("Error reading chat history:", error);
     };
 }
+const chatHistory = readChatHistory();
 
 io.on('connection', (socket) => {
     connectedUsers++;
@@ -66,7 +67,6 @@ io.on('connection', (socket) => {
 
     socket.on('message', (msg) => {
         const senderUsername = userMap.get(socket.id) || 'Anonymous';
-
         const messageObj = {
             message: msg.message,
             sender: senderUsername,
@@ -74,7 +74,6 @@ io.on('connection', (socket) => {
             timestamp: new Date().toISOString(),
         };
 
-        const chatHistory = readChatHistory();
         chatHistory.push(messageObj);
 
         try {
@@ -87,8 +86,10 @@ io.on('connection', (socket) => {
             console.error("Error saving chat history:", error);
         }
 
-        io.emit('message', [...chatHistory]);
+        io.emit('message', messageObj);
     });
+
+    socket.emit('chatHistory', chatHistory);
 });
 
 server.listen(PORT, () => {

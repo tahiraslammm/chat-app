@@ -10,6 +10,7 @@ const Chat = ({
   socket,
 }) => {
   const [message, setMessage] = useState("");
+  const messagesEndRef = useRef(null);
 
   const handleChange = (e) => {
     setMessage(e.target.value);
@@ -20,13 +21,13 @@ const Chat = ({
 
     if (message && socket) {
       socket.emit("message", { message, socketId });
-      setMessage(""); // Clear the input after sending
+      setMessage("");
     }
   };
-  const chatEndRef = useRef(null);
+
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
@@ -141,7 +142,7 @@ const Chat = ({
                     backgroundColor: "#fff",
                     borderRadius: "5px",
                     boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.1)",
-                    textAlign: isCurrentUser ? "right" : "left", // Align to right if it's the current user's message
+                    textAlign: isCurrentUser ? "right" : "left",
                   }}
                 >
                   <h4 style={{ margin: 0 }}>{message.message}</h4>
@@ -154,6 +155,7 @@ const Chat = ({
           ) : (
             <h4>No messages yet</h4>
           )}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Chat Input */}

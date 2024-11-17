@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 import Chat from "./components/chat";
 
 const App = () => {
-  const socketRef = useRef(null); // To maintain socket instance
+  const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [socketId, setSocketId] = useState("");
   const [userCount, setUserCount] = useState(0);
@@ -39,6 +39,8 @@ const App = () => {
           socketRef.current.emit("setUsername", username);
           setUsernameSet(true);
         }
+
+        // socketRef.current.emit("chatHistory");
       });
 
       socketRef.current.on("disconnect", () => {
@@ -52,7 +54,15 @@ const App = () => {
       });
 
       socketRef.current.on("message", (receivedMessage) => {
-        setMessages(() => [...receivedMessage]);
+        setMessages((previousMessages) => [
+          ...previousMessages,
+          receivedMessage,
+        ]);
+      });
+
+      socketRef.current.on("chatHistory", (chatHistory) => {
+        console.log(chatHistory);
+        setMessages(chatHistory);
       });
     }
 
@@ -65,7 +75,16 @@ const App = () => {
 
   return (
     <>
-      {!usernameSet ? (
+      {usernameSet ? (
+        <Chat
+          connected={connected}
+          userCount={userCount}
+          socketId={socketId}
+          messages={messages}
+          usersList={usersList}
+          socket={socketRef.current}
+        />
+      ) : (
         <div>
           <h3>Set Your Username</h3>
           <input
@@ -76,15 +95,6 @@ const App = () => {
           />
           <button onClick={handleSetUsername}>Set Username</button>
         </div>
-      ) : (
-        <Chat
-          connected={connected}
-          userCount={userCount}
-          socketId={socketId}
-          messages={messages}
-          usersList={usersList}
-          socket={socketRef.current}
-        />
       )}
     </>
   );
