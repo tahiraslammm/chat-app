@@ -1,0 +1,20 @@
+[
+  {
+    "message": "hey",
+    "sender": "ali",
+    "socketId": "xVa49gTajgdHLwWkAAAF",
+    "timestamp": "2024-11-17T07:31:01.137Z"
+  },
+  {
+    "message": "hello",
+    "sender": "muddasir",
+    "socketId": "mM_PrrK2MYvcdQm-AAAP",
+    "timestamp": "2024-11-17T09:49:51.976Z"
+  },
+  {
+    "message": "kya haal hai",
+    "sender": "usman",
+    "socketId": "GauULSH3lMDzm3BMAAAB",
+    "timestamp": "2024-11-17T09:50:01.624Z"
+  }
+]

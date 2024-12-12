@@ -1,25 +1,31 @@
-import { Button, CircularProgress, TextField } from "@mui/material";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import Chat from "./components/chat";
 
 const App = () => {
   const socketRef = useRef(null);
   const [connected, setConnected] = useState(false);
+  const [socketId, setSocketId] = useState("");
   const [userCount, setUserCount] = useState(0);
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [usersList, setUsersList] = useState([]);
 
-  const handleChange = (e) => {
-    setMessage(e.target.value);
-  };
+  const [username, setUsername] = useState(
+    localStorage.getItem("username") || ""
+  );
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const [usernameSet, setUsernameSet] = useState(
+    !!localStorage.getItem("username")
+  );
 
-    if (message) {
-      socketRef.current.emit("message", message);
-      setMessage("");
+  const handleSetUsername = () => {
+    if (!(socketRef.current && username.trim())) {
+      return;
     }
+
+    localStorage.setItem("username", username.trim());
+    socketRef.current.emit("setUsername", username.trim());
+    setUsernameSet(true);
   };
 
   useEffect(() => {
@@ -28,18 +34,35 @@ const App = () => {
 
       socketRef.current.on("connect", () => {
         setConnected(true);
+
+        if (username) {
+          socketRef.current.emit("setUsername", username);
+          setUsernameSet(true);
+        }
+
+        // socketRef.current.emit("chatHistory");
       });
 
       socketRef.current.on("disconnect", () => {
         setConnected(false);
       });
 
-      socketRef.current.on("userCount", (count) => {
-        setUserCount(count);
+      socketRef.current.on("userData", (userData) => {
+        setUserCount(userData.connectedUsers);
+        setSocketId(userData.socketId);
+        setUsersList(userData.usersList);
       });
 
-      socketRef.current.on("message", (messages) => {
-        setMessages(messages);
+      socketRef.current.on("message", (receivedMessage) => {
+        setMessages((previousMessages) => [
+          ...previousMessages,
+          receivedMessage,
+        ]);
+      });
+
+      socketRef.current.on("chatHistory", (chatHistory) => {
+        console.log(chatHistory);
+        setMessages(chatHistory);
       });
     }
 
@@ -48,79 +71,32 @@ const App = () => {
         socketRef.current.disconnect();
       }
     };
-  }, []);
+  }, [username]);
 
   return (
-    <div style={{ fontSize: "24px", textAlign: "center", marginTop: "50px" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-        }}
-      >
-        <div
-          style={{
-            width: "20px",
-            height: "20px",
-            borderRadius: "50%",
-            backgroundColor: connected ? "green" : "gray",
-          }}
+    <>
+      {usernameSet ? (
+        <Chat
+          connected={connected}
+          userCount={userCount}
+          socketId={socketId}
+          messages={messages}
+          usersList={usersList}
+          socket={socketRef.current}
         />
-        <span>{connected ? "Connected" : "Connecting"}</span>
-      </div>
-
-      <div style={{ marginTop: "20px" }}>
-        <span style={{ display: "inline-flex", alignItems: "center" }}>
-          Users Online:{" "}
-          {userCount ? (
-            userCount
-          ) : (
-            <CircularProgress size={24} style={{ marginLeft: "10px" }} />
-          )}
-        </span>
-      </div>
-
-      <div>{messages ? <h1>{messages}</h1> : <h1>No messages yet</h1>}</div>
-
-      <div
-        style={{
-          marginTop: "30px",
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-        }}
-      >
-        {/* Chat Message Input */}
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            width: "100%",
-            marginTop: "30px",
-          }}
-        >
-          <TextField
-            value={message}
-            onChange={handleChange}
-            placeholder="Enter Message"
-            size="small"
-            style={{
-              marginBottom: "20px",
-              maxWidth: "100%",
-              borderRadius: "20px",
-            }}
+      ) : (
+        <div>
+          <h3>Set Your Username</h3>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Enter username"
           />
-
-          <Button variant="contained" type="submit" disabled={!message}>
-            Send
-          </Button>
-        </form>
-      </div>
-    </div>
+          <button onClick={handleSetUsername}>Set Username</button>
+        </div>
+      )}
+    </>
   );
 };
 
